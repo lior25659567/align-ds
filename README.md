@@ -38,6 +38,7 @@ Folders:
 - **`fonts/`** — (Roboto is loaded from Google Fonts; no local files). If you need offline use, drop the Roboto .ttfs here and swap the `@import` in `colors_and_type.css`.
 - **`ui_kits/ads-web/`** — UI kit: JSX components and a live click-through `index.html` demonstrating the system in a realistic internal web app.
 - **`preview/`** — small HTML cards used to populate the Design System tab (tokens, type specimens, component states). Reference these when you need a one-glance reminder of what something looks like.
+- **`align-ds-react/`** — Vite + React 19 reference app showing the components in use. See [Use in another project](#use-in-another-project) below.
 
 ---
 
@@ -210,6 +211,106 @@ Because the real ADS icon set is not shipped with the Figma file, the UI kit dra
 ### Logos included
 
 - `assets/align-logo.svg` — the "Align" wordmark from the Figma cover frame. Black fill, transparent background.
+
+---
+
+## Use in another project
+
+Two paths depending on the stack you're dropping it into.
+
+### Path A — Vanilla HTML / CSS (any framework)
+
+This is the smallest possible integration: pull in the token layer and start using the CSS variables.
+
+1. **Copy the files.** From this repo, copy `colors_and_type.css` and the `assets/` folder into your project (e.g. `src/styles/` and `src/assets/`).
+2. **Import the tokens once, at the root of your app.** In a vanilla page:
+   ```html
+   <link rel="stylesheet" href="/styles/colors_and_type.css">
+   ```
+   Or in a bundler (Vite, webpack, Next, etc.):
+   ```js
+   import "./styles/colors_and_type.css";
+   ```
+3. **Use the variables.** All tokens are CSS custom properties prefixed with `--ads-`:
+   ```css
+   .my-button {
+     background: var(--ads-blue-500);
+     color: var(--ads-text-on-primary);
+     border-radius: var(--ads-radius-sm);
+     font: 500 14px/18px var(--ads-font-sans);
+   }
+   .my-button:hover  { background: var(--ads-blue-600); }
+   .my-button:active { background: var(--ads-blue-700); }
+   ```
+4. **Optional — install as a git submodule** so you can pull design updates:
+   ```bash
+   git submodule add https://github.com/lior25659567/align-ds.git vendor/align-ds
+   ```
+   Then import from `vendor/align-ds/colors_and_type.css`.
+
+### Path B — React (Vite / Next / CRA)
+
+The `align-ds-react/` folder is a working Vite + React 19 reference app. To reuse its components in another project:
+
+1. **Copy these into your project's `src/`:**
+   - `align-ds-react/src/styles/tokens.css` (or this repo's root `colors_and_type.css` — same tokens)
+   - `align-ds-react/src/styles/components.css`
+   - `align-ds-react/src/components/` (Kit.jsx, Shell.jsx, Icon.jsx, index.js)
+2. **Wire it up in `main.jsx` / `_app.tsx`:**
+   ```jsx
+   import "./styles/tokens.css";
+   import "./styles/components.css";
+   ```
+3. **Use the components:**
+   ```jsx
+   import { Button, Card, TextField, Tag } from "./components";
+
+   export default function Page() {
+     return (
+       <Card>
+         <TextField label="Patient ID" placeholder="e.g. 1024-AB" />
+         <Button variant="primary">Save changes</Button>
+       </Card>
+     );
+   }
+   ```
+4. **Roboto font.** `tokens.css` `@import`s Roboto from Google Fonts. If you serve fonts locally, drop the `.ttf`s in your project's `public/fonts/` and replace the `@import` with a local `@font-face` block.
+
+### Path C — Run the reference app locally
+
+To poke around the live demo before integrating:
+
+```bash
+git clone https://github.com/lior25659567/align-ds.git
+cd align-ds/align-ds-react
+npm install
+npm run dev
+```
+
+Open the printed `http://localhost:5173`. The static `index.html` at the repo root works without any build step — just open it in a browser.
+
+### What to copy vs. what to leave behind
+
+| You probably want | You can skip |
+| --- | --- |
+| `colors_and_type.css` (tokens) | `preview/` (specimen cards, dev-only) |
+| `assets/align-logo.svg` | `align-ds-react/index.html` (the demo shell) |
+| `align-ds-react/src/components/` | `align-ds-react/src/screens/` (the demo screens) |
+| `align-ds-react/src/styles/` | `ui_kits/ads-web/Screens.jsx` (demo only) |
+
+### Versioning & updates
+
+Pin to a tag/commit, don't track `main`. When you want updates:
+
+```bash
+# submodule path
+git -C vendor/align-ds fetch && git -C vendor/align-ds checkout <new-tag>
+
+# copy path
+# diff your local copies against the new commit and merge by hand
+```
+
+The token names (`--ads-blue-500`, `--ads-radius-sm`, `--ads-text-primary`, `--ads-font-sans`, etc.) are the public API — those are the names you should depend on. Internal class names inside `components.css` may change.
 
 ---
 
